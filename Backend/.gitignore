@@ -1,0 +1,71 @@
+# Git ignore rules for Python/Django, venvs, and local artifacts.
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environment
+venv/
+env/
+.venv/
+ENV/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+
+# Environment variables — NEVER commit real secrets
+.env
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+*.rdb
+
+# Testing
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# IDE
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Migrations — commit these, but ignore any accidental duplicates
+# apps/*/migrations/*.py  ← DO NOT uncomment — migrations must be committed
+
+# Node (if frontend added later)
+node_modules/
+npm-debug.log*
+
+# Build artifacts
+*.mo
+*.pot

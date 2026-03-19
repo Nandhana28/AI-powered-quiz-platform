@@ -1,0 +1,1 @@
+# Python runtime version spec for deployment (python-3.12.10).
