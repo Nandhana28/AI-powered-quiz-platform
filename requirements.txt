@@ -1,1 +1,0 @@
-# Production Python dependencies for the Django REST API.
