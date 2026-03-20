@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI-Powered Quiz App — ER Diagram</title>
+<style>
+:root {
+  --bg:#f0f2f5; --surface:#fff; --text:#1a1a2e; --muted:#888;
+  --border:#e2e4ed; --shadow:0 2px 12px rgba(0,0,0,.10);
+  --toolbar:#fff; --toolbar-border:#e2e4ed;
+}
+[data-theme=dark] {
+  --bg:#0e1117; --surface:#1a1d2e; --text:#dde1f0; --muted:#8888aa;
+  --border:#2a2d45; --shadow:0 2px 16px rgba(0,0,0,.5);
+  --toolbar:#13162a; --toolbar-border:#2a2d45;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;}
+#tb{position:fixed;top:0;left:0;right:0;z-index:200;background:var(--toolbar);border-bottom:1px solid var(--toolbar-border);display:flex;align-items:center;gap:8px;padding:8px 16px;box-shadow:0 1px 6px rgba(0,0,0,.07);}
+#tb h1{font-size:14px;font-weight:700;flex:1;}
+#tb .sub{font-size:11px;color:var(--muted);}
+.btn{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 11px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:500;transition:all .15s;user-select:none;}
+.btn:hover{filter:brightness(.95);}
+#zoom-lbl{font-size:12px;color:var(--muted);min-width:40px;text-align:center;}
+#legend{position:fixed;bottom:16px;left:16px;z-index:200;background:var(--toolbar);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:11px;box-shadow:var(--shadow);}
+#legend h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;}
+.li{display:flex;align-items:center;gap:7px;margin-bottom:4px;color:var(--text);}
+.ld{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.rel-legend{margin-top:10px;border-top:1px solid var(--border);padding-top:10px;}
+.pk{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:#fee2e2;color:#991b1b;flex-shrink:0;}
+.fk{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:#dbeafe;color:#1e40af;flex-shrink:0;}
+.uk{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:#fef3c7;color:#92400e;flex-shrink:0;}
+#wrap{position:fixed;top:46px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;}
+#wrap.panning{cursor:grabbing;}
+#canvas{position:absolute;top:0;left:0;width:5000px;height:4000px;transform-origin:0 0;}
+#svgl{position:absolute;top:0;left:0;width:5000px;height:4000px;pointer-events:none;z-index:1;}
+#gridcanvas{position:fixed;top:46px;left:0;right:0;bottom:0;pointer-events:none;z-index:0;}
+.tbl{position:absolute;z-index:10;border-radius:10px;overflow:hidden;box-shadow:var(--shadow);min-width:210px;cursor:move;user-select:none;border:2px solid transparent;transition:box-shadow .15s;}
+.tbl:hover{box-shadow:0 8px 28px rgba(0,0,0,.18);z-index:30;}
+.th{padding:8px 12px;font-size:12px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px;letter-spacing:.02em;}
+.tb-body{background:var(--surface);}
+.row{display:flex;align-items:center;padding:3px 10px;border-bottom:1px solid var(--border);font-size:11px;gap:4px;}
+.row:last-child{border-bottom:none;}
+.rn{flex:1;color:var(--text);font-weight:500;}
+.rt{color:var(--muted);font-size:10px;flex-shrink:0;margin-right:3px;}
+.g-u .th{background:linear-gradient(135deg,#6d28d9,#7c3aed);} .tbl.g-u{border-color:#7c3aed;}
+.g-q .th{background:linear-gradient(135deg,#1d4ed8,#2563eb);} .tbl.g-q{border-color:#2563eb;}
+.g-a .th{background:linear-gradient(135deg,#065f46,#059669);} .tbl.g-a{border-color:#059669;}
+.g-i .th{background:linear-gradient(135deg,#92400e,#d97706);} .tbl.g-i{border-color:#d97706;}
+.g-g .th{background:linear-gradient(135deg,#9d174d,#db2777);} .tbl.g-g{border-color:#db2777;}
+.g-l .th{background:linear-gradient(135deg,#1e3a5f,#2d6a9f);} .tbl.g-l{border-color:#2d6a9f;}
+</style>
+</head>
+<body data-theme="light">
+
+<div id="tb">
+  <h1>AI-Powered Quiz App — ER Diagram</h1>
+  <span class="sub">17 tables · scroll to zoom · drag background to pan · drag table to move</span>
+  <span id="zoom-lbl">75%</span>
+  <button class="btn" onclick="doZoom(0.08)">＋</button>
+  <button class="btn" onclick="doZoom(-0.08)">－</button>
+  <button class="btn" onclick="resetView()">⌂ Reset</button>
+  <button class="btn" id="tbtn" onclick="toggleTheme()">🌙 Dark</button>
+</div>
+
+<canvas id="gridcanvas"></canvas>
+
+<div id="legend">
+  <h4>Domain</h4>
+  <div class="li"><div class="ld" style="background:#7c3aed"></div>Auth / Users</div>
+  <div class="li"><div class="ld" style="background:#2563eb"></div>Quizzes</div>
+  <div class="li"><div class="ld" style="background:#059669"></div>Attempts</div>
+  <div class="li"><div class="ld" style="background:#d97706"></div>AI Generation</div>
+  <div class="li"><div class="ld" style="background:#db2777"></div>Gamification</div>
+  <div class="li"><div class="ld" style="background:#2d6a9f"></div>Analytics</div>
+  <div class="rel-legend">
+    <h4>Fields</h4>
+    <div class="li"><span class="pk">PK</span> Primary Key</div>
+    <div class="li"><span class="fk">FK</span> Foreign Key</div>
+    <div class="li"><span class="uk">UQ</span> Unique</div>
+    <div style="margin-top:8px;font-size:10px;color:var(--muted);line-height:1.8;">
+      <div>──⊢ &nbsp;exactly one (1)</div>
+      <div>──&lt; &nbsp;many (N)</div>
+      <div>- - - &nbsp;optional / nullable</div>
+    </div>
+  </div>
+</div>
+
+<div id="wrap">
+  <div id="canvas">
+    <svg id="svgl" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
+
+<script>
+const TABLES = [
+  { id:'User', g:'g-u', icon:'👤', x:1020, y:90, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'username',t:'varchar(150)',k:''},
+    {n:'email',t:'varchar(254)',k:'uq'},
+    {n:'password',t:'varchar',k:''},
+    {n:'role',t:'user | admin',k:''},
+    {n:'is_active',t:'bool',k:''},
+    {n:'created_at',t:'datetime',k:''},
+    {n:'updated_at',t:'datetime',k:''},
+  ]},
+  { id:'UserProfile', g:'g-u', icon:'📋', x:80, y:90, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'user_id',t:'→ User',k:'fk'},
+    {n:'display_name',t:'varchar(100)',k:''},
+    {n:'avatar_url',t:'url',k:''},
+    {n:'bio',t:'text',k:''},
+    {n:'phone_number',t:'varchar(20)',k:''},
+    {n:'is_deleted',t:'bool',k:''},
+    {n:'deleted_at',t:'datetime null',k:''},
+    {n:'created_at',t:'datetime',k:''},
+  ]},
+  { id:'PasswordResetToken', g:'g-u', icon:'🔑', x:560, y:90, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'user_id',t:'→ User',k:'fk'},
+    {n:'token',t:'uuid',k:'uq'},
+    {n:'is_used',t:'bool',k:''},
+    {n:'expires_at',t:'datetime +15min',k:''},
+    {n:'created_at',t:'datetime',k:''},
+  ]},
+  { id:'UserLoginHistory', g:'g-u', icon:'🔐', x:80, y:560, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'user_id',t:'→ User null',k:'fk'},
+    {n:'email_attempted',t:'varchar(254)',k:''},
+    {n:'status',t:'success|failed|blocked',k:''},
+    {n:'ip_address',t:'inet null',k:''},
+    {n:'user_agent',t:'text',k:''},
+    {n:'created_at',t:'datetime',k:''},
+  ]},
+  { id:'Topic', g:'g-q', icon:'📚', x:1560, y:90, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'parent_id',t:'→ Topic null (self)',k:'fk'},
+    {n:'name',t:'varchar(100)',k:''},
+    {n:'slug',t:'varchar(200)',k:'uq'},
+    {n:'level',t:'1=domain|2=subject|3=sub',k:''},
+    {n:'icon_key',t:'varchar(50)',k:''},
+    {n:'is_active',t:'bool',k:''},
+    {n:'created_at',t:'datetime',k:''},
+  ]},
+  { id:'Quiz', g:'g-q', icon:'📝', x:1900, y:90, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'topic_id',t:'→ Topic',k:'fk'},
+    {n:'created_by',t:'→ User null',k:'fk'},
+    {n:'title',t:'varchar(200)',k:''},
+    {n:'difficulty',t:'easy|medium|hard',k:''},
+    {n:'total_questions',t:'int default:10',k:''},
+    {n:'time_limit_minutes',t:'int default:15',k:''},
+    {n:'pass_percentage',t:'float default:60',k:''},
+    {n:'is_published',t:'bool',k:''},
+    {n:'is_ai_generated',t:'bool',k:''},
+    {n:'is_weekly_challenge',t:'bool',k:''},
+    {n:'weekly_bonus_xp',t:'int default:0',k:''},
+    {n:'available_from',t:'datetime null',k:''},
+    {n:'expires_at',t:'datetime null',k:''},
+    {n:'is_deleted',t:'bool',k:''},
+    {n:'created_at',t:'datetime',k:''},
+    {n:'updated_at',t:'datetime',k:''},
+  ]},
+  { id:'Question', g:'g-q', icon:'❓', x:2310, y:90, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'quiz_id',t:'→ Quiz',k:'fk'},
+    {n:'text',t:'text',k:''},
+    {n:'explanation',t:'text',k:''},
+    {n:'order',t:'int',k:''},
+    {n:'marks',t:'float default:1.0',k:''},
+    {n:'is_deleted',t:'bool',k:''},
+    {n:'deleted_at',t:'datetime null',k:''},
+    {n:'created_at',t:'datetime',k:''},
+  ]},
+  { id:'Choice', g:'g-q', icon:'☑️', x:2700, y:90, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'question_id',t:'→ Question',k:'fk'},
+    {n:'text',t:'varchar(500)',k:''},
+    {n:'is_correct',t:'bool — never exposed in attempt',k:''},
+    {n:'order',t:'int',k:''},
+  ]},
+  { id:'QuizAttempt', g:'g-a', icon:'🎯', x:1560, y:680, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'user_id',t:'→ User',k:'fk'},
+    {n:'quiz_id',t:'→ Quiz',k:'fk'},
+    {n:'status',t:'in_progress|submitted|expired|abandoned',k:''},
+    {n:'score',t:'float null',k:''},
+    {n:'total_marks',t:'float null',k:''},
+    {n:'percentage',t:'float null',k:''},
+    {n:'correct_count',t:'int null',k:''},
+    {n:'incorrect_count',t:'int null',k:''},
+    {n:'skipped_count',t:'int null',k:''},
+    {n:'is_passed',t:'bool null',k:''},
+    {n:'xp_earned',t:'int null',k:''},
+    {n:'started_at',t:'datetime',k:''},
+    {n:'submitted_at',t:'datetime null',k:''},
+    {n:'expires_at',t:'datetime (locked at start)',k:''},
+    {n:'time_taken_seconds',t:'int null',k:''},
+    {n:'is_late_submission',t:'bool',k:''},
+  ]},
+  { id:'AttemptAnswer', g:'g-a', icon:'✏️', x:2040, y:680, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'attempt_id',t:'→ QuizAttempt',k:'fk'},
+    {n:'question_id',t:'→ Question',k:'fk'},
+    {n:'selected_choice_id',t:'→ Choice null',k:'fk'},
+    {n:'is_correct',t:'bool (server-side)',k:''},
+    {n:'marks_awarded',t:'float default:0',k:''},
+    {n:'answered_at',t:'datetime',k:''},
+  ]},
+  { id:'AIGenerationRequest', g:'g-i', icon:'🤖', x:2450, y:680, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'requested_by',t:'→ User',k:'fk'},
+    {n:'topic_id',t:'→ Topic',k:'fk'},
+    {n:'quiz_id',t:'→ Quiz null (on complete)',k:'fk'},
+    {n:'difficulty',t:'easy|medium|hard',k:''},
+    {n:'question_count',t:'int',k:''},
+    {n:'status',t:'pending|processing|completed|failed',k:''},
+    {n:'raw_response',t:'json null (re-parseable)',k:''},
+    {n:'prompt_used',t:'text',k:''},
+    {n:'error_message',t:'text',k:''},
+    {n:'retries',t:'int default:0',k:''},
+    {n:'created_at',t:'datetime',k:''},
+    {n:'completed_at',t:'datetime null',k:''},
+  ]},
+  { id:'Badge', g:'g-g', icon:'🏅', x:80, y:1180, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'name',t:'varchar(100)',k:'uq'},
+    {n:'description',t:'text',k:''},
+    {n:'icon_key',t:'varchar(50)',k:''},
+    {n:'condition_type',t:'first_quiz|streak_5|perfect_hard|...',k:''},
+    {n:'is_active',t:'bool',k:''},
+    {n:'created_at',t:'datetime',k:''},
+  ]},
+  { id:'UserBadge', g:'g-g', icon:'🎖️', x:430, y:1180, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'user_id',t:'→ User',k:'fk'},
+    {n:'badge_id',t:'→ Badge',k:'fk'},
+    {n:'earned_at',t:'datetime',k:''},
+  ]},
+  { id:'UserGameProfile', g:'g-g', icon:'🎮', x:740, y:1180, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'user_id',t:'→ User',k:'fk'},
+    {n:'xp_total',t:'int default:0',k:''},
+    {n:'level',t:'novice|apprentice|scholar|expert|master',k:''},
+    {n:'streak_easy',t:'int default:0',k:''},
+    {n:'streak_medium',t:'int default:0',k:''},
+    {n:'streak_hard',t:'int default:0',k:''},
+    {n:'streak_freeze_count',t:'int default:1',k:''},
+    {n:'last_easy_attempt',t:'date null',k:''},
+    {n:'last_medium_attempt',t:'date null',k:''},
+    {n:'last_hard_attempt',t:'date null',k:''},
+    {n:'last_active_date',t:'date null',k:''},
+    {n:'updated_at',t:'datetime',k:''},
+  ]},
+  { id:'PersonalBest', g:'g-g', icon:'🏆', x:1180, y:1180, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'user_id',t:'→ User',k:'fk'},
+    {n:'topic_id',t:'→ Topic',k:'fk'},
+    {n:'attempt_id',t:'→ QuizAttempt null',k:'fk'},
+    {n:'difficulty',t:'easy|medium|hard',k:''},
+    {n:'best_score',t:'float',k:''},
+    {n:'achieved_at',t:'datetime',k:''},
+  ]},
+  { id:'UserTopicStat', g:'g-g', icon:'📊', x:1560, y:1180, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'user_id',t:'→ User',k:'fk'},
+    {n:'topic_id',t:'→ Topic',k:'fk'},
+    {n:'total_attempts',t:'int default:0',k:''},
+    {n:'total_correct',t:'int default:0',k:''},
+    {n:'avg_score',t:'float default:0 (running)',k:''},
+    {n:'best_score',t:'float default:0',k:''},
+    {n:'last_attempted_at',t:'datetime null',k:''},
+  ]},
+  { id:'AuditLog', g:'g-l', icon:'📋', x:1980, y:1180, fields:[
+    {n:'id',t:'bigint',k:'pk'},
+    {n:'actor_id',t:'→ User null',k:'fk'},
+    {n:'action',t:'created|submitted|login|badge_earned|...',k:''},
+    {n:'resource_type',t:'varchar(50)',k:''},
+    {n:'resource_id',t:'int null',k:''},
+    {n:'description',t:'text',k:''},
+    {n:'metadata',t:'json default:{}',k:''},
+    {n:'ip_address',t:'inet null',k:''},
+    {n:'timestamp',t:'datetime — APPEND ONLY',k:''},
+  ]},
+];
+
+// [from, to, label, cardinality]
+// cardinality: '1:1' '1:N' '0:1' '0:N'
+const RELS = [
+  ['User','UserProfile','has profile','1:1'],
+  ['User','UserGameProfile','has game state','1:1'],
+  ['User','PasswordResetToken','requests reset','1:N'],
+  ['User','UserLoginHistory','login logged','1:N'],
+  ['User','QuizAttempt','takes attempt','1:N'],
+  ['User','UserBadge','earns badge','1:N'],
+  ['User','PersonalBest','achieves','1:N'],
+  ['User','UserTopicStat','tracked by','1:N'],
+  ['User','AuditLog','actor in log','1:N'],
+  ['User','AIGenerationRequest','requests AI','1:N'],
+  ['User','Quiz','creates quiz','1:N'],
+  ['Topic','Topic','parent of','1:N'],
+  ['Topic','Quiz','categorises','1:N'],
+  ['Topic','AIGenerationRequest','used in AI gen','1:N'],
+  ['Topic','PersonalBest','subject of best','1:N'],
+  ['Topic','UserTopicStat','tracked in stat','1:N'],
+  ['Quiz','Question','contains','1:N'],
+  ['Quiz','QuizAttempt','attempted via','1:N'],
+  ['Quiz','AIGenerationRequest','generated by AI','0:1'],
+  ['Question','Choice','has 4 choices','1:N'],
+  ['Question','AttemptAnswer','answered in','1:N'],
+  ['QuizAttempt','AttemptAnswer','contains answers','1:N'],
+  ['QuizAttempt','PersonalBest','records best','0:1'],
+  ['Choice','AttemptAnswer','selected as answer','0:N'],
+  ['Badge','UserBadge','awarded as','1:N'],
+];
+
+const GC = {
+  'g-u':'#7c3aed','g-q':'#2563eb','g-a':'#059669',
+  'g-i':'#d97706','g-g':'#db2777','g-l':'#2d6a9f'
+};
+
+// Build tables
+const canvas = document.getElementById('canvas');
+const tEls = {};
+
+TABLES.forEach(t => {
+  const div = document.createElement('div');
+  div.className = `tbl ${t.g}`;
+  div.id = `T${t.id}`;
+  div.style.cssText = `left:${t.x}px;top:${t.y}px;`;
+  const rows = t.fields.map(f => {
+    const b = f.k==='pk'?'<span class="pk">PK</span>':f.k==='fk'?'<span class="fk">FK</span>':f.k==='uq'?'<span class="uk">UQ</span>':'';
+    return `<div class="row"><span class="rn">${f.n}</span><span class="rt">${f.t}</span>${b}</div>`;
+  }).join('');
+  div.innerHTML = `<div class="th">${t.icon} ${t.id}</div><div class="tb-body">${rows}</div>`;
+  canvas.appendChild(div);
+  tEls[t.id] = div;
+  makeDraggable(div);
+});
+
+// SVG
+const svg = document.getElementById('svgl');
+
+function edgePt(el, tx, ty) {
+  const ex = parseFloat(el.style.left), ey = parseFloat(el.style.top);
+  const ew = el.offsetWidth, eh = el.offsetHeight;
+  const cx = ex+ew/2, cy = ey+eh/2;
+  const dx = tx-cx, dy = ty-cy;
+  if (!dx && !dy) return {x:cx,y:cy};
+  const sx = Math.abs(ew/2/(dx||1e9)), sy = Math.abs(eh/2/(dy||1e9));
+  const s = Math.min(sx, sy) * 0.94;
+  return {x: cx+dx*s, y: cy+dy*s};
+}
+
+function crowFoot(x, y, angle, color, isMany) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  const L = 12, W = 7;
+  const cos = Math.cos(angle), sin = Math.sin(angle);
+
+  if (isMany) {
+    // crow's foot (3 lines)
+    const lines = [
+      [0,0, -L, -W],
+      [0,0, -L, 0],
+      [0,0, -L,  W],
+    ];
+    lines.forEach(([x1,y1,x2,y2]) => {
+      const rx1 = x + x1*cos - y1*sin, ry1 = y + x1*sin + y1*cos;
+      const rx2 = x + x2*cos - y2*sin, ry2 = y + x2*sin + y2*cos;
+      const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',rx1); l.setAttribute('y1',ry1);
+      l.setAttribute('x2',rx2); l.setAttribute('y2',ry2);
+      l.setAttribute('stroke',color); l.setAttribute('stroke-width','1.8');
+      l.setAttribute('opacity','0.85');
+      g.appendChild(l);
+    });
+    // vertical bar at base
+    const bx1 = x + (-L)*cos - W*sin, by1 = y + (-L)*sin + W*cos;
+    const bx2 = x + (-L)*cos - (-W)*sin, by2 = y + (-L)*sin + (-W)*cos;
+    const bl = document.createElementNS('http://www.w3.org/2000/svg','line');
+    bl.setAttribute('x1',bx1); bl.setAttribute('y1',by1);
+    bl.setAttribute('x2',bx2); bl.setAttribute('y2',by2);
+    bl.setAttribute('stroke',color); bl.setAttribute('stroke-width','1.8'); bl.setAttribute('opacity','0.85');
+    g.appendChild(bl);
+  } else {
+    // single vertical bar (one)
+    const bx1 = x + (-L)*cos - W*sin, by1 = y + (-L)*sin + W*cos;
+    const bx2 = x + (-L)*cos + W*sin, by2 = y + (-L)*sin - W*cos;
+    const bl = document.createElementNS('http://www.w3.org/2000/svg','line');
+    bl.setAttribute('x1',bx1); bl.setAttribute('y1',by1);
+    bl.setAttribute('x2',bx2); bl.setAttribute('y2',by2);
+    bl.setAttribute('stroke',color); bl.setAttribute('stroke-width','2'); bl.setAttribute('opacity','0.85');
+    g.appendChild(bl);
+  }
+  svg.appendChild(g);
+}
+
+function drawRels() {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const dark = document.body.dataset.theme==='dark';
+
+  RELS.forEach(([from, to, label, card]) => {
+    if (from===to) return;
+    const a = tEls[from], b = tEls[to];
+    if (!a||!b) return;
+
+    const ax = parseFloat(a.style.left)+a.offsetWidth/2;
+    const ay = parseFloat(a.style.top)+a.offsetHeight/2;
+    const bx = parseFloat(b.style.left)+b.offsetWidth/2;
+    const by = parseFloat(b.style.top)+b.offsetHeight/2;
+
+    const pa = edgePt(a, bx, by);
+    const pb = edgePt(b, ax, ay);
+
+    const color = GC[TABLES.find(t=>t.id===from)?.g]||'#888';
+    const isOpt = card.startsWith('0');
+    const isMany = card.endsWith('N');
+
+    // Bezier
+    const dx = pb.x-pa.x, dy = pb.y-pa.y;
+    const bend = Math.min(Math.abs(dx), Math.abs(dy), 120)*0.5;
+    const cpx1 = pa.x + dx*0.4, cpy1 = pa.y + dy*0.1;
+    const cpx2 = pb.x - dx*0.4, cpy2 = pb.y - dy*0.1;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${pa.x},${pa.y} C${cpx1},${cpy1} ${cpx2},${cpy2} ${pb.x},${pb.y}`);
+    path.setAttribute('stroke',color);
+    path.setAttribute('stroke-width','1.5');
+    path.setAttribute('fill','none');
+    path.setAttribute('opacity', dark?'0.5':'0.38');
+    if (isOpt) path.setAttribute('stroke-dasharray','7,4');
+    svg.appendChild(path);
+
+    // Crow's foot at target
+    const angle = Math.atan2(pb.y-cpy2, pb.x-cpx2);
+    crowFoot(pb.x, pb.y, angle, color, isMany);
+
+    // Single bar at source
+    const angleA = Math.atan2(pa.y-cpy1, pa.x-cpx1);
+    crowFoot(pa.x, pa.y, angleA, color, false);
+
+    // Label
+    const mx = (pa.x+pb.x)/2, my = (pa.y+pb.y)/2;
+    const tw = label.length*5.4+14;
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x',mx-tw/2); rect.setAttribute('y',my-9);
+    rect.setAttribute('width',tw); rect.setAttribute('height',17);
+    rect.setAttribute('rx','5');
+    rect.setAttribute('fill', dark?'#1a1d2e':'#fff');
+    rect.setAttribute('stroke', dark?'#2a2d45':'#e0e0e8');
+    rect.setAttribute('stroke-width','0.8');
+    svg.appendChild(rect);
+
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x',mx); txt.setAttribute('y',my);
+    txt.setAttribute('text-anchor','middle'); txt.setAttribute('dominant-baseline','central');
+    txt.setAttribute('font-size','9'); txt.setAttribute('font-family','-apple-system,sans-serif');
+    txt.setAttribute('fill', dark?'#aab':'#556');
+    txt.setAttribute('font-weight','500');
+    txt.textContent = label;
+    svg.appendChild(txt);
+
+    // Cardinality numbers
+    const [cardA, cardB] = card.split(':');
+    const offA = 20, offB = 20;
+    const dirAx = (pa.x-bx)/(Math.sqrt((pa.x-bx)**2+(pa.y-by)**2)||1);
+    const dirAy = (pa.y-by)/(Math.sqrt((pa.x-bx)**2+(pa.y-by)**2)||1);
+    const dirBx = (pb.x-ax)/(Math.sqrt((pb.x-ax)**2+(pb.y-ay)**2)||1);
+    const dirBy = (pb.y-ay)/(Math.sqrt((pb.x-ax)**2+(pb.y-ay)**2)||1);
+
+    [[pa.x+dirAx*offA, pa.y+dirAy*offA-10, cardA==='0'?'0..1':'1'],
+     [pb.x+dirBx*offB, pb.y+dirBy*offB-10, cardB==='1'?'1':'N']
+    ].forEach(([cx,cy,card2]) => {
+      const ct = document.createElementNS('http://www.w3.org/2000/svg','text');
+      ct.setAttribute('x',cx); ct.setAttribute('y',cy);
+      ct.setAttribute('text-anchor','middle'); ct.setAttribute('dominant-baseline','central');
+      ct.setAttribute('font-size','10'); ct.setAttribute('font-weight','700');
+      ct.setAttribute('font-family','-apple-system,sans-serif');
+      ct.setAttribute('fill',color); ct.setAttribute('opacity','0.9');
+      ct.textContent = card2;
+      svg.appendChild(ct);
+    });
+  });
+}
+
+// ── DRAG TABLES ──
+function makeDraggable(el) {
+  let ox, oy, sx, sy, active=false;
+  el.addEventListener('mousedown', e=>{
+    active=true;
+    ox=parseFloat(el.style.left); oy=parseFloat(el.style.top);
+    sx=e.clientX/scale; sy=e.clientY/scale;
+    el.style.zIndex=50;
+    e.stopPropagation(); e.preventDefault();
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!active) return;
+    el.style.left=(ox+e.clientX/scale-sx)+'px';
+    el.style.top=(oy+e.clientY/scale-sy)+'px';
+    drawRels();
+  });
+  document.addEventListener('mouseup', ()=>{ if(active){active=false;el.style.zIndex=10;} });
+}
+
+// ── PAN ──
+let scale=0.75, tx=0, ty=0;
+let panning=false, psx, psy;
+const wrap = document.getElementById('wrap');
+
+wrap.addEventListener('mousedown', e=>{
+  const t = e.target;
+  if (t===wrap || t.id==='canvas' || t.id==='svgl') {
+    panning=true; psx=e.clientX-tx; psy=e.clientY-ty;
+    wrap.classList.add('panning');
+  }
+});
+document.addEventListener('mousemove', e=>{
+  if(!panning) return;
+  tx=e.clientX-psx; ty=e.clientY-psy;
+  applyT(); drawGrid();
+});
+document.addEventListener('mouseup', ()=>{ panning=false; wrap.classList.remove('panning'); });
+
+// ── SMOOTH WHEEL ZOOM ──
+let targetScale=0.75, animating=false;
+
+wrap.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const delta = e.deltaY < 0 ? 0.06 : -0.06;
+  targetScale = Math.max(0.15, Math.min(2.5, targetScale+delta));
+  if(!animating) animate();
+}, {passive:false});
+
+function animate() {
+  animating=true;
+  const prev = scale;
+  scale += (targetScale-scale)*0.18;
+  if(Math.abs(scale-targetScale)<0.001) { scale=targetScale; animating=false; }
+
+  const rect = wrap.getBoundingClientRect();
+  const cx = rect.width/2, cy = rect.height/2;
+  tx = cx - (cx-tx)*(scale/prev);
+  ty = cy - (cy-ty)*(scale/prev);
+
+  applyT(); drawGrid();
+  if(animating) requestAnimationFrame(animate);
+}
+
+function doZoom(d) {
+  targetScale = Math.max(0.15, Math.min(2.5, targetScale+d));
+  if(!animating) animate();
+}
+
+function applyT() {
+  canvas.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
+  canvas.style.transformOrigin='0 0';
+  document.getElementById('zoom-lbl').textContent=Math.round(scale*100)+'%';
+}
+
+function resetView() {
+  targetScale=0.75; scale=0.75; tx=0; ty=0;
+  applyT(); drawGrid();
+}
+
+// ── DOT GRID ──
+function drawGrid() {
+  const gc = document.getElementById('gridcanvas');
+  gc.width=window.innerWidth; gc.height=window.innerHeight;
+  const ctx = gc.getContext('2d');
+  ctx.clearRect(0,0,gc.width,gc.height);
+  const dark = document.body.dataset.theme==='dark';
+  ctx.fillStyle = dark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.07)';
+  const sp = 24*scale;
+  const ox2=((tx%sp)+sp)%sp, oy2=((ty%sp)+sp)%sp;
+  for(let x=ox2;x<gc.width;x+=sp)
+    for(let y=oy2;y<gc.height;y+=sp){
+      ctx.beginPath(); ctx.arc(x,y,1,0,Math.PI*2); ctx.fill();
+    }
+}
+
+// ── THEME ──
+function toggleTheme(){
+  const dark=document.body.dataset.theme==='dark';
+  document.body.dataset.theme=dark?'light':'dark';
+  document.getElementById('tbtn').textContent=dark?'🌙 Dark':'☀️ Light';
+  setTimeout(()=>{drawGrid();drawRels();},40);
+}
+
+// ── INIT ──
+window.addEventListener('resize', ()=>{drawGrid();drawRels();});
+setTimeout(()=>{drawGrid();drawRels();applyT();},150);
+</script>
+</body>
+</html>
