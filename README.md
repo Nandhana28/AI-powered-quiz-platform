@@ -426,32 +426,10 @@ git push origin feature/your-feature
 - `OperationalError`: Run migrations: `python manage.py migrate`
 - `CORS error`: Check CORS_ALLOWED_ORIGINS in settings
 
-## 📞 Support
 
-- **Issues**: GitHub Issues
-- **Discussions**: GitHub Discussions
-- **Email**: support@quizapp.com
-- **Documentation**: See Backend/README.md
-
-## 📄 License
-
-MIT License — See LICENSE file
-
-## 👥 Team
-
-- **Backend Developer**: Django/DRF specialist
-- **Frontend Developer**: React/Vue specialist (coming soon)
-- **DevOps**: Deployment and infrastructure
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Django & Django REST Framework community
 - Google Gemini API
 - PostgreSQL
 - All open-source contributors
-
----
-
-**Status**: Backend complete and tested ✅
-**Frontend**: Coming soon 🚀
-**Last Updated**: March 2026
