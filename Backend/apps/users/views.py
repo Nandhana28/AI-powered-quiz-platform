@@ -207,3 +207,157 @@ class MeView(APIView):
             data=serializer.data,
             message='Profile updated successfully'
         )
+
+
+class DashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # recent attempts
+        from apps.attempts.models import QuizAttempt
+        recent_attempts = QuizAttempt.objects.filter(
+            user=user,
+            status='submitted'
+        ).select_related(
+            'quiz__topic'
+        ).order_by('-submitted_at')[:5]
+
+        from apps.attempts.serializers import AttemptHistorySerializer
+        attempts_data = AttemptHistorySerializer(
+            recent_attempts, many=True
+        ).data
+
+        # stats
+        from django.db.models import Avg, Count
+        stats = QuizAttempt.objects.filter(
+            user=user,
+            status='submitted'
+        ).aggregate(
+            total_attempts=Count('id'),
+            avg_score=Avg('percentage'),
+            total_xp=Count('xp_earned'),
+        )
+
+        return success_response(data={
+            'user': {
+                'id':         user.id,
+                'email':      user.email,
+                'username':   user.username,
+                'role':       user.role,
+            },
+            'stats': {
+                'total_attempts': stats['total_attempts'] or 0,
+                'avg_score':      round(stats['avg_score'] or 0, 2),
+            },
+            'recent_attempts': attempts_data,
+        })
+
+class AdminUserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_admin:
+            return error_response(
+                message='Admin access required',
+                status_code=403
+            )
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        users = User.objects.select_related(
+            'profile'
+        ).order_by('-created_at')
+
+        serializer = UserSerializer(users, many=True)
+        return success_response(data=serializer.data)
+
+
+class AdminUserDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        if not request.user.is_admin:
+            return error_response(
+                message='Admin access required',
+                status_code=403
+            )
+        try:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            user = User.objects.select_related('profile').get(id=user_id)
+        except User.DoesNotExist:
+            return error_response(message='User not found', status_code=404)
+
+        serializer = UserSerializer(user)
+        return success_response(data=serializer.data)
+
+    def patch(self, request, user_id):
+        if not request.user.is_admin:
+            return error_response(
+                message='Admin access required',
+                status_code=403
+            )
+        try:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return error_response(message='User not found', status_code=404)
+
+        # only allow role and is_active changes
+        allowed = ['role', 'is_active']
+        for field in allowed:
+            if field in request.data:
+                setattr(user, field, request.data[field])
+        user.save()
+
+        return success_response(
+            data=UserSerializer(user).data,
+            message='User updated'
+        )
+
+
+class AdminDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_admin:
+            return error_response(
+                message='Admin access required',
+                status_code=403
+            )
+
+        from django.contrib.auth import get_user_model
+        from apps.quizzes.models import Quiz
+        from apps.attempts.models import QuizAttempt
+        from apps.ai_generation.models import AIGenerationRequest
+        from django.utils import timezone
+        from django.db.models import Count
+
+        User = get_user_model()
+        today = timezone.now().date()
+
+        total_users    = User.objects.count()
+        total_quizzes  = Quiz.objects.filter(is_deleted=False).count()
+        total_attempts_today = QuizAttempt.objects.filter(
+            started_at__date=today
+        ).count()
+        ai_total       = AIGenerationRequest.objects.count()
+        ai_success     = AIGenerationRequest.objects.filter(
+            status='completed'
+        ).count()
+        ai_success_rate = round(
+            (ai_success / ai_total * 100) if ai_total > 0 else 0, 2
+        )
+
+        return success_response(data={
+            'total_users':           total_users,
+            'total_quizzes':         total_quizzes,
+            'total_attempts_today':  total_attempts_today,
+            'ai_generation': {
+                'total':        ai_total,
+                'success':      ai_success,
+                'success_rate': ai_success_rate,
+            },
+        })
