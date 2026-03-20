@@ -106,7 +106,7 @@ class SubmitAttemptView(APIView):
     def post(self, request, attempt_id):
         try:
             attempt = QuizAttempt.objects.select_related(
-                'quiz'
+                'quiz__topic'
             ).get(id=attempt_id)
         except QuizAttempt.DoesNotExist:
             return error_response(message='Attempt not found', status_code=404)
@@ -124,12 +124,47 @@ class SubmitAttemptView(APIView):
         if error:
             return error_response(message=error, status_code=400)
 
-        serializer = AttemptResultSerializer(attempt)
-        return success_response(
-            data=serializer.data,
-            message='Quiz submitted successfully'
+        # gamification
+        from services import gamification_service, analytics_service, audit_service
+
+        gamification_service.update_streak(request.user, attempt.quiz.difficulty)
+        gamification_service.award_xp(request.user, attempt.xp_earned or 0)
+        new_badges = gamification_service.check_and_award_badges(request.user, attempt)
+        gamification_service.update_personal_best(
+            user=request.user,
+            topic=attempt.quiz.topic,
+            difficulty=attempt.quiz.difficulty,
+            score=attempt.percentage,
+            attempt=attempt,
         )
 
+        # analytics
+        analytics_service.update_topic_stat(
+            user=request.user,
+            topic=attempt.quiz.topic,
+            score=attempt.percentage,
+            attempt=attempt,
+        )
+        percentile = analytics_service.calculate_percentile(
+            request.user, attempt.quiz, attempt.percentage
+        )
+        suggestion = analytics_service.suggest_difficulty(
+            request.user, attempt.quiz.topic
+        )
+
+        # audit
+        audit_service.log_attempt_submitted(request.user, attempt)
+
+        serializer = AttemptResultSerializer(attempt)
+        data = serializer.data
+        data['newly_earned_badges']    = new_badges
+        data['percentile']             = percentile
+        data['suggested_difficulty']   = suggestion
+
+        return success_response(
+            data=data,
+            message='Quiz submitted successfully'
+        )
 
 class AttemptResultView(APIView):
     permission_classes = [IsAuthenticated]

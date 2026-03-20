@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/v1/', include('apps.quizzes.urls')),
     path('api/v1/', include('apps.attempts.urls')),
     path('api/v1/', include('apps.ai_generation.urls')),
+    path('api/v1/', include('apps.gamification.urls')),
 
     # api docs
     path('api/schema/',  SpectacularAPIView.as_view(),        name='schema'),
