@@ -132,8 +132,11 @@ def submit_attempt(attempt):
 
     from services import scoring_service
 
-    attempt, error = scoring_service.calculate_results(attempt)
-    return attempt, error
+    try:
+        attempt = scoring_service.calculate_results(attempt)
+        return attempt, None
+    except Exception as e:
+        return attempt, str(e)
 
 
 def get_attempt_results(attempt):
