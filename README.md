@@ -2,7 +2,7 @@
 
 A full-stack web application for creating, taking, and sharing AI-generated quizzes with gamification features. Learn interactively with personalized difficulty suggestions and compete on global leaderboards.
 
-## 🎯 Project Overview
+##  Project Overview
 
 **AI-Powered Quiz Platform** is a modern learning application that combines:
 - **AI-Generated Content**: Automatically create quizzes using Google Gemini
@@ -18,7 +18,7 @@ A full-stack web application for creating, taking, and sharing AI-generated quiz
 - **Hierarchical Topics**: 3-level taxonomy (Domain → Subject → Subtopic)
 - **Real-time Scoring**: Instant feedback with server-side validation
 
-## 🏗️ Architecture
+##  Architecture
 
 ### Full-Stack Structure
 ```
@@ -63,7 +63,7 @@ AI-Powered Quiz Platform
 - **Static Files**: WhiteNoise
 - **Monitoring**: Sentry (optional)
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Backend Setup
 
@@ -112,7 +112,7 @@ npm install
 npm run dev
 ```
 
-## 📚 Core Features
+##  Core Features
 
 ### 1. User Management
 - Email-based registration with verification
@@ -203,7 +203,7 @@ npm run dev
 - **Audit Logging**: Track all significant actions
 - **HTTPS Ready**: Production security headers
 
-## 📖 API Documentation
+##  API Documentation
 
 ### Base URL
 ```
@@ -264,7 +264,7 @@ Authorization: Bearer <access_token>
 
 **Full API docs**: `http://localhost:8000/api/docs/`
 
-## 🗄️ Database Schema
+##  Database Schema
 
 ### Core Tables
 - **users** — User accounts with roles
@@ -289,7 +289,7 @@ Authorization: Bearer <access_token>
 - (user, badge) unique on user_badges
 - (user, topic, difficulty) unique on personal_bests
 
-## 🧪 Testing
+##  Testing
 
 ### Run Tests
 ```bash
@@ -308,7 +308,7 @@ pytest --cov              # Coverage
 - AI generation and deduplication
 - Analytics calculations
 
-## 📦 Deployment
+##  Deployment
 
 ### Environment Variables
 ```env
@@ -349,9 +349,9 @@ docker build -t quiz-api .
 docker run -p 8000:8000 quiz-api
 ```
 
-## 🛣️ Roadmap
+##  Roadmap
 
-### Phase 1 (Current) ✅
+### Phase 1 (Current) 
 - [x] Backend API complete
 - [x] User authentication
 - [x] Quiz system
@@ -374,7 +374,7 @@ docker run -p 8000:8000 quiz-api
 - [ ] Community features
 - [ ] Marketplace for quizzes
 
-## 🤝 Contributing
+##  Contributing
 
 ### Setup Development Environment
 ```bash
@@ -406,14 +406,14 @@ git push origin feature/your-feature
 3. Ensure all tests pass
 4. Request review
 
-## 📝 Documentation
+##  Documentation
 
 - **Backend README**: `Backend/README.md` — Detailed backend documentation
 - **API Docs**: `http://localhost:8000/api/docs/` — Interactive Swagger UI
 - **Database Schema**: `Backend/docs/DATABASE_SCHEMA.md`
 - **Design Decisions**: `Backend/docs/DESIGN_DECISIONS.md`
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Backend Issues
 - **Migration errors**: `python manage.py migrate --fake-initial`
